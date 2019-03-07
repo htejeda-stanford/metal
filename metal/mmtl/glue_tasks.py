@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 import torch.nn as nn
-from auxiliary_tasks import add_bleu_labels
+from auxiliary_tasks import add_bleu_labels, add_spacy_ner_labels
 
 from metal.contrib.modules.lstm_module import EmbeddingsEncoder, LSTMModule
 from metal.end_model import IdentityModule
@@ -61,7 +61,7 @@ task_defaults = {
     # Auxiliary task dict -- set here for now
     "auxiliary_tasks": {
         "STSB": ["BLEU"],
-        "MRPC": ["BLEU"],
+        "MRPC": ["BLEU", "SPACY_NER"],
         "MRPC_SAN": ["BLEU"],
         "QQP": ["BLEU"],
         "QQP_SAN": ["BLEU"],
@@ -281,6 +281,16 @@ def create_tasks_and_payloads(task_names, **kwargs):
                 scorer=Scorer(custom_metric_funcs={mse: ["mse"]}),
             )
 
+        elif task_name == "SPACY_NER":
+            task = ClassificationTask(
+                name=task_name,
+                input_module=input_module,
+                middle_module=cls_middle_module,
+                attention_module=get_attention_module(config, neck_dim),
+                head_module=BinaryHead(neck_dim),
+                scorer=Scorer(standard_metrics=["accuracy"]),
+            )
+        
         # Append task to task list
         task_list.append(task)
 
@@ -296,6 +306,10 @@ def create_tasks_and_payloads(task_names, **kwargs):
                     if "BLEU" in auxiliary_tasks[task_name]:
                         print(f"Adding BLEU labels to {task_name} {split} payload")
                         add_bleu_labels(payload)
+
+                    if "SPACY_NER" in auxiliary_tasks[task_name]:
+                        print(f"Adding SPACY_NER labels to {task_name} {split} payload")
+                        add_spacy_ner_labels(payload)
 
                 # Add each payload to the list
                 payload_list.append(payload)

@@ -8,6 +8,9 @@ import torch.utils.data as data
 from pytorch_pretrained_bert import BertTokenizer
 from torch.utils.data.sampler import Sampler, SubsetRandomSampler
 
+import spacy
+nlp = spacy.load('en')
+
 from metal.mmtl.utils.preprocess import get_task_tsv_config, load_tsv
 from metal.utils import padded_tensor, set_seed
 
@@ -50,7 +53,7 @@ class GLUEDataset(data.Dataset):
         max_len=0,
         bert_vocab=None,
         tokenize_bert=True,
-        tokenize_spacy=True,
+        nlp_spacy=True,
     ):
         """
         Args:
@@ -82,8 +85,8 @@ class GLUEDataset(data.Dataset):
             self.bert_tokenizer = bert_tokenizer
             self.bert_tokens = bert_tokens
             self.bert_segments = bert_segments
-        if tokenize_spacy:
-            self.spacy_tokens = self.tokenize_spacy()
+        if nlp_spacy:
+            self.nlp_spacy = self.nlp_spacy()
 
     def __getitem__(self, index):
         """Retrieves a single instance with its labels
@@ -263,8 +266,11 @@ class GLUEDataset(data.Dataset):
 
         return tokenizer, bert_tokens, bert_segments
 
-    def tokenize_spacy(self):
-        pass
+    def nlp_spacy(self):
+        nlp_out = []
+        for sentence_pair in self.sentences:
+            nlp_out.append([nlp(sent) for sent in sentence_pair])
+        return nlp_out
 
     @classmethod
     def from_tsv(
@@ -287,7 +293,7 @@ class GLUEDataset(data.Dataset):
         max_datapoints=-1,
         generate_uids=False,
         tokenize_bert=True,
-        tokenize_spacy=True,
+        nlp_spacy=True,
     ):
 
         # load and preprocess data from tsv
@@ -314,5 +320,5 @@ class GLUEDataset(data.Dataset):
             max_len=-1,
             bert_vocab=bert_vocab,
             tokenize_bert=True,
-            tokenize_spacy=True,
+            nlp_spacy=True,
         )
