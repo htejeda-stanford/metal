@@ -14,11 +14,12 @@ from metal.mmtl.modules import (
     BinaryHead,
     MulticlassHead,
     RegressionHead,
+    BertTokenClassificationHead,
     SoftAttentionModule,
 )
 from metal.mmtl.payload import Payload
 from metal.mmtl.scorer import Scorer
-from metal.mmtl.task import ClassificationTask, RegressionTask
+from metal.mmtl.task import ClassificationTask, RegressionTask, TokenClassificationTask
 from metal.mmtl.utils.dataloaders import get_all_dataloaders
 from metal.mmtl.utils.metrics import (
     acc_f1,
@@ -274,13 +275,14 @@ def create_tasks_and_payloads(task_names, **kwargs):
             )
 
         elif task_name == "SPACY_NER":
-            task = ClassificationTask(
+            # Length of SPACY_INFO['NER_TAGS']
+            num_tags = 19
+            task = TokenClassificationTask(
                 name=task_name,
                 input_module=input_module,
                 middle_module=cls_middle_module,
                 attention_module=get_attention_module(config, neck_dim),
-                head_module=BinaryHead(neck_dim),
-                scorer=Scorer(standard_metrics=["accuracy"]),
+                head_module=BertTokenClassificationHead(neck_dim, num_tags),
             )
 
         else:
