@@ -14,6 +14,7 @@ def get_all_dataloaders(
     generate_uids=False,
     seed=123,
     verbose=True,
+    run_spacy=False,
 ):
     """ Initializes train/dev/test dataloaders given dataset_class"""
 
@@ -34,6 +35,7 @@ def get_all_dataloaders(
             max_len=max_len,
             max_datapoints=max_datapoints,
             generate_uids=generate_uids,
+            run_spacy=run_spacy,
         )
 
     dataloaders = {}

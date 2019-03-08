@@ -68,12 +68,16 @@ task_defaults = {
     # Auxiliary Tasks
     "auxiliary_task_dict": {  # A map of each aux. task to the payloads it applies to
         "BLEU": ["MNLI", "RTE", "WNLI", "QQP", "MRPC", "STSB", "QNLI"],
-        # "STSB": ["BLEU"],
+        "SPACY_NER":["MRPC"], 
+       # "STSB": ["BLEU"],
         # "MRPC": ["BLEU"],
         # "QQP": ["BLEU"],
     },
+
 }
 
+# List of tasks requiring Spacy tokenization\
+SPACY_TASKS = ["SPACY_NER"]
 
 def create_tasks_and_payloads(task_names, **kwargs):
     assert len(task_names) > 0
@@ -117,8 +121,13 @@ def create_tasks_and_payloads(task_names, **kwargs):
     payloads = []
     for task_name in task_names:
         # Pull out names of auxiliary tasks to be dealt with in a second step
+        # TODO: fix this logic for cases where auxiliary task for task_name has 
+        # its own payload
         has_payload = task_name not in config["auxiliary_task_dict"]
 
+        # Pull out names of tasks with auxiliary tasks that need spacy
+        run_spacy = any(task_name in aux_tasks for prim_task, aux_tasks in config["auxiliary_task_dict"].items() if prim_task in SPACY_TASKS)
+                
         # Override general dl kwargs with task-specific kwargs
         dl_kwargs = copy.deepcopy(config["dl_kwargs"])
         if task_name in task_dl_kwargs:
@@ -136,6 +145,7 @@ def create_tasks_and_payloads(task_names, **kwargs):
                 splits=config["splits"],
                 seed=config["seed"],
                 generate_uids=kwargs.get("generate_uids", False),
+                run_spacy=run_spacy
             )
 
         if task_name == "COLA":
@@ -150,6 +160,7 @@ def create_tasks_and_payloads(task_names, **kwargs):
                 attention_module=get_attention_module(config, neck_dim),
                 head_module=BinaryHead(neck_dim),
                 scorer=scorer,
+                run_spacy=run_spacy
             )
 
         elif task_name == "SST2":
